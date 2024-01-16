@@ -28,7 +28,7 @@ def test_post_assignment_null_content(client, h_student_1):
     """
     failure case: content cannot be null
     """
-
+    
     response = client.post(
         '/student/assignments',
         headers=h_student_1,

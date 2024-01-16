@@ -5,7 +5,7 @@ from core.libs import helpers, assertions
 from core.models.teachers import Teacher
 from core.models.students import Student
 from sqlalchemy.types import Enum as BaseEnum
-
+from datetime import datetime
 
 class GradeEnum(str, enum.Enum):
     A = 'A'
@@ -71,6 +71,30 @@ class Assignment(db.Model):
 
         return assignment
 
+    @classmethod
+    def grade_or_regrade_assignment(cls, _id, grade, auth_principal):
+        assignment = cls.query.get(_id)
+        if not assignment:
+            raise ValueError("Assignment not found")
+
+     # Check if the assignment is already graded
+        if assignment.state == AssignmentStateEnum.GRADED:
+        # If already graded, re-grade the assignment
+            assignment.grade = grade
+        else:
+        # If not graded, grade the assignment
+            assignment.grade = grade
+            assignment.state = AssignmentStateEnum.GRADED
+
+    # Update timestamps and commit to the database
+        assignment.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return assignment
+    @classmethod
+    def get_all_teachers(cls):
+        return cls.query.filter(cls.teacher_id.isnot(None)).all()
+
 
     @classmethod
     def mark_grade(cls, _id, grade, auth_principal: AuthPrincipal):
@@ -91,3 +115,7 @@ class Assignment(db.Model):
     @classmethod
     def get_assignments_by_teacher(cls, teacher_id):
         return cls.filter(cls.teacher_id == teacher_id).all()
+    
+    @classmethod
+    def get_submitted_graded_assignments(cls):
+        return cls.query.filter(cls.state.in_(['SUBMITTED','GRADED'])).all()
